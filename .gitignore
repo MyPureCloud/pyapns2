@@ -48,4 +48,4 @@ venv/
 # Poetry
 poetry.lock
 
-.idea/*
+.idea/
