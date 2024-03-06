@@ -39,6 +39,17 @@ MAX_CONNECTION_RETRIES = 3
 logger = logging.getLogger(__name__)
 
 
+def get_notification_result(status: int, reason: str) -> Union[str, Tuple[str, str]]:
+    """
+    Get result for specified stream
+    The function returns: 'Success' or 'failure reason' or ('Unregistered', timestamp)
+    """
+    if status == 200:
+        return 'Success'
+    else:
+        return reason
+
+
 class APNsClient(object):
     SANDBOX_SERVER = 'api.development.push.apple.com'
     LIVE_SERVER = 'api.push.apple.com'
@@ -90,8 +101,8 @@ class APNsClient(object):
     def send_notification(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
                           priority: NotificationPriority = NotificationPriority.Immediate,
                           expiration: Optional[int] = None, collapse_id: Optional[str] = None) -> None:
-        stream_id = self.send_notification_async(token_hex, notification, topic, priority, expiration, collapse_id)
-        result = self.get_notification_result(stream_id)
+        status, reason = self.send_notification_async(token_hex, notification, topic, priority, expiration, collapse_id)
+        result = self.get_notification_result(status, reason)
         if result != 'Success':
             if isinstance(result, tuple):
                 reason, info = result
@@ -146,24 +157,8 @@ class APNsClient(object):
             headers['apns-collapse-id'] = collapse_id
 
         url = '/3/device/{}'.format(token_hex)
-        stream_id = self._connection.request('POST', url, data=json_payload, headers=headers)  # type: int
-        return stream_id
-
-    def get_notification_result(self, stream_id: int) -> Union[str, Tuple[str, str]]:
-        """
-        Get result for specified stream
-        The function returns: 'Success' or 'failure reason' or ('Unregistered', timestamp)
-        """
-        with self._connection.get_response(stream_id) as response:
-            if response.status == 200:
-                return 'Success'
-            else:
-                raw_data = response.read().decode('utf-8')
-                data = json.loads(raw_data)  # type: Dict[str, str]
-                if response.status == 410:
-                    return data['reason'], data['timestamp']
-                else:
-                    return data['reason']
+        response = self._connection.request('POST', url, data=json_payload, headers=headers)
+        return response.status_code, response.text
 
     def send_notification_batch(self, notifications: Iterable[Notification], topic: Optional[str] = None,
                                 priority: NotificationPriority = NotificationPriority.Immediate,
