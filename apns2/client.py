@@ -146,7 +146,7 @@ class APNsClient(object):
             headers['apns-collapse-id'] = collapse_id
 
         url = '/3/device/{}'.format(token_hex)
-        stream_id = self._connection.request('POST', url, json_payload, headers)  # type: int
+        stream_id = self._connection.request('POST', url, data=json_payload, headers=headers)  # type: int
         return stream_id
 
     def get_notification_result(self, stream_id: int) -> Union[str, Tuple[str, str]]:
