@@ -72,7 +72,7 @@ class APNsClient(object):
     def send_notification(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
                           priority: NotificationPriority = NotificationPriority.Immediate,
                           expiration: Optional[int] = None, collapse_id: Optional[str] = None) -> None:
-        with httpx.Client(http2=True, verify=self.__credentials.ssl_context) as client:
+        with httpx.Client(http2=True, verify=False) as client:
             status, reason = self.send_notification_sync(client, token_hex, notification, topic, priority, expiration,
                                                          collapse_id)
             result = self.get_notification_result(status, reason)
@@ -124,10 +124,6 @@ class APNsClient(object):
 
         if expiration is not None:
             headers['apns-expiration'] = '%d' % expiration
-
-        auth_header = self.__credentials.get_authorization_header(topic)
-        if auth_header is not None:
-            headers['authorization'] = auth_header
 
         if collapse_id is not None:
             headers['apns-collapse-id'] = collapse_id
