@@ -8,6 +8,8 @@ from enum import Enum
 from threading import Thread
 from typing import Dict, Iterable, Optional, Tuple, Union
 
+import httpx
+
 from .credentials import CertificateCredentials, Credentials
 from .errors import ConnectionFailed, exception_class_for_reason
 # We don't generally need to know about the Credentials subclasses except to
@@ -101,7 +103,10 @@ class APNsClient(object):
     def send_notification(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
                           priority: NotificationPriority = NotificationPriority.Immediate,
                           expiration: Optional[int] = None, collapse_id: Optional[str] = None) -> None:
-        status, reason = self.send_notification_async(token_hex, notification, topic, priority, expiration, collapse_id)
+        with httpx.Client(http2=True) as client:
+            status, reason = self.send_notification_sync(token_hex, notification, client, topic,
+                                                         priority, expiration, collapse_id)
+            
         result = self.get_notification_result(status, reason)
         if result != 'Success':
             if isinstance(result, tuple):
@@ -110,10 +115,11 @@ class APNsClient(object):
             else:
                 raise exception_class_for_reason(result)
 
-    def send_notification_async(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
-                                priority: NotificationPriority = NotificationPriority.Immediate,
-                                expiration: Optional[int] = None, collapse_id: Optional[str] = None,
-                                push_type: Optional[NotificationType] = None) -> int:
+    def send_notification_sync(self, token_hex: str, notification: Payload, client: httpx.Client,
+                               topic: Optional[str] = None,
+                               priority: NotificationPriority = NotificationPriority.Immediate,
+                               expiration: Optional[int] = None, collapse_id: Optional[str] = None,
+                               push_type: Optional[NotificationType] = None) -> int:
         json_str = json.dumps(notification.dict(), cls=self.__json_encoder, ensure_ascii=False, separators=(',', ':'))
         json_payload = json_str.encode('utf-8')
 
@@ -157,7 +163,7 @@ class APNsClient(object):
             headers['apns-collapse-id'] = collapse_id
 
         url = '/3/device/{}'.format(token_hex)
-        response = self._connection.request('POST', url, data=json_payload, headers=headers)
+        response = client.post(f"https://{self.__server}:{self.__port}{url}", headers=headers, data=json_payload)
         return response.status_code, response.text
 
     def send_notification_batch(self, notifications: Iterable[Notification], topic: Optional[str] = None,
