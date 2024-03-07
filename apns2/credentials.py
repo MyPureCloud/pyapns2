@@ -3,7 +3,7 @@ from typing import Optional, Tuple, TYPE_CHECKING
 
 import jwt
 
-from httpx import AsyncClient
+from httpx import Client
 
 DEFAULT_TOKEN_LIFETIME = 2700
 DEFAULT_TOKEN_ENCRYPTION_ALGORITHM = 'ES256'
@@ -18,7 +18,7 @@ class Credentials(object):
 
     # Creates a connection with the credentials, if available or necessary.
     def create_connection(self, server: str, port: int, proto: Optional[str], proxy_host: Optional[str] = None,
-                          proxy_port: Optional[int] = None) -> AsyncClient:
+                          proxy_port: Optional[int] = None) -> Client:
 
         self.server = server
         self.port = port
@@ -32,7 +32,7 @@ class Credentials(object):
                 proxy += f":{proxy_port}"
             kwargs['proxy'] = proxy
 
-        return AsyncClient(**kwargs)
+        return Client(**kwargs)
 
     def get_authorization_header(self, topic: Optional[str]) -> Optional[str]:
         return None
