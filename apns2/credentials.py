@@ -1,9 +1,9 @@
-import ssl
 import time
-from os import PathLike
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, TYPE_CHECKING
 
 import jwt
+
+from httpx import Client
 
 DEFAULT_TOKEN_LIFETIME = 2700
 DEFAULT_TOKEN_ENCRYPTION_ALGORITHM = 'ES256'
@@ -11,9 +11,28 @@ DEFAULT_TOKEN_ENCRYPTION_ALGORITHM = 'ES256'
 
 # Abstract Base class. This should not be instantiated directly.
 class Credentials(object):
-    def __init__(self, ssl_context: Optional[ssl.SSLContext] = None) -> None:
+    def __init__(self, ssl_context: 'Optional[tuple]' = None) -> None:
+        self.__ssl_context = ssl_context
+
         super().__init__()
-        self.ssl_context = ssl_context
+
+    # Creates a connection with the credentials, if available or necessary.
+    def create_connection(self, server: str, port: int, proto: Optional[str], proxy_host: Optional[str] = None,
+                          proxy_port: Optional[int] = None) -> Client:
+
+        self.server = server
+        self.port = port
+
+        kwargs = {"http2": True}
+
+        # Set up our proxy
+        if proxy_host:
+            proxy = proxy_host
+            if proxy_port:
+                proxy += f":{proxy_port}"
+            kwargs['proxy'] = proxy
+
+        return Client(**kwargs)
 
     def get_authorization_header(self, topic: Optional[str]) -> Optional[str]:
         return None
@@ -21,10 +40,12 @@ class Credentials(object):
 
 # Credentials subclass for certificate authentication
 class CertificateCredentials(Credentials):
-    def __init__(self, cert_file: Optional[Union[str, bytes, PathLike[str], PathLike[bytes]]] = None,
-                 password: Optional[str] = None) -> None:
-        ssl_context = ssl.create_default_context()
-        ssl_context.load_cert_chain(cert_file, password=password)
+    def __init__(self, cert_file: Optional[str] = None, password: Optional[str] = None,
+                 cert_chain: Optional[str] = None) -> None:
+        ssl_context = (cert_file, password)
+        # Not sure how to implement cert chain
+        # if cert_chain:
+        #     ssl_context.load_cert_chain(cert_chain)
         super(CertificateCredentials, self).__init__(ssl_context)
 
 
