@@ -63,9 +63,9 @@ class APNsClient(object):
 
     def _init_connection(self, use_sandbox: bool, use_alternative_port: bool, proto: Optional[str],
                          proxy_host: Optional[str], proxy_port: Optional[int]) -> None:
-        server = self.SANDBOX_SERVER if use_sandbox else self.LIVE_SERVER
-        port = self.ALTERNATIVE_PORT if use_alternative_port else self.DEFAULT_PORT
-        self._connection = self.__credentials.create_connection(server, port, proto, proxy_host, proxy_port)
+        self.server = self.SANDBOX_SERVER if use_sandbox else self.LIVE_SERVER
+        self.port = self.ALTERNATIVE_PORT if use_alternative_port else self.DEFAULT_PORT
+        self._connection = self.__credentials.create_connection(self.server, self.port, proto, proxy_host, proxy_port)
 
     def send_notification(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
                           priority: NotificationPriority = NotificationPriority.Immediate,
@@ -127,8 +127,8 @@ class APNsClient(object):
         if collapse_id is not None:
             headers['apns-collapse-id'] = collapse_id
 
-        url = '/3/device/{}'.format(token_hex)
-        response = self._connection.post(url, data=json_payload, headers=headers)
+        url = f'https://{self.server}:{self.port}/3/device/{token_hex}'
+        response = self._connection.post(url, headers=headers, data=json_payload)
         return response.status_code, response.text
 
     def send_notification_batch(self, notifications: Iterable[Notification], topic: Optional[str] = None,
