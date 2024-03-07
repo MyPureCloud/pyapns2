@@ -83,7 +83,7 @@ class APNsClient(object):
                          proxy_host: Optional[str], proxy_port: Optional[int]) -> None:
         self.server = self.SANDBOX_SERVER if use_sandbox else self.LIVE_SERVER
         self.port = self.ALTERNATIVE_PORT if use_alternative_port else self.DEFAULT_PORT
-        self._connection = self.create_connection(self.server, self.port, proto, proxy_host, proxy_port)
+        self._connection = create_connection(self.server, self.port, proto, proxy_host, proxy_port)
 
     def send_notification(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
                           priority: NotificationPriority = NotificationPriority.Immediate,
