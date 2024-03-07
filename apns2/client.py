@@ -125,9 +125,9 @@ class APNsClient(object):
         if collapse_id is not None:
             headers['apns-collapse-id'] = collapse_id
 
-        async with self._connection as client:
+        with self._connection as client:
             url = '/3/device/{}'.format(token_hex)
-            response = await client.request('POST', url, data=json_payload, headers=headers)
+            response = client.request('POST', url, data=json_payload, headers=headers)
 
         return response.status_code, response.text
 
@@ -156,7 +156,8 @@ class APNsClient(object):
 
         return results
 
-    def get_notification_result(self, status, reason):
+    @staticmethod
+    def get_notification_result(status, reason):
         """
         Get result for specified stream
         The function returns: 'Success' or 'failure reason' or ('Unregistered', timestamp)
