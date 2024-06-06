@@ -144,6 +144,10 @@ class APNsClient(object):
         if collapse_id is not None:
             headers['apns-collapse-id'] = collapse_id
 
+        auth_header = self.__credentials.get_authorization_header(topic)
+        if auth_header is not None:
+            headers['authorization'] = auth_header
+
         url = f'https://{self.server}:{self.port}/3/device/{token_hex}'
         response = client.post(url, headers=headers, data=json_payload)
         return response.status_code, response.text
