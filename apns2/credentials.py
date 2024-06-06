@@ -18,14 +18,32 @@ class Credentials(object):
     def get_authorization_header(self, topic: Optional[str]) -> Optional[str]:
         return None
 
+    def get_cert_file(self):
+        return None
+
+    def get_password(self):
+        return None
+
+    def get_ssl_context(self):
+        return self.ssl_context
+
 
 # Credentials subclass for certificate authentication
 class CertificateCredentials(Credentials):
-    def __init__(self, cert_file: Optional[Union[str, bytes, PathLike[str], PathLike[bytes]]] = None,
+    def __init__(self,
+                 cert_file: Optional[Union[str, bytes, PathLike[str], PathLike[bytes]]] = None,
                  password: Optional[str] = None) -> None:
-        ssl_context = ssl.create_default_context()
-        ssl_context.load_cert_chain(cert_file, password=password)
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.load_cert_chain(cert_file, password=password)
+        self.cert_file = cert_file
+        self.password = password
         super(CertificateCredentials, self).__init__(ssl_context)
+
+    def get_cert_file(self):
+        return self.cert_file
+
+    def get_password(self):
+        return self.password
 
 
 # Credentials subclass for JWT token based authentication

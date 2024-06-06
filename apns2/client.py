@@ -40,7 +40,6 @@ logger = logging.getLogger(__name__)
 
 def create_connection(proxy_host: Optional[str] = None,
                       proxy_port: Optional[int] = None) -> Client:
-
     kwargs = {"http2": True}
 
     # Set up our proxy
@@ -62,7 +61,8 @@ class APNsClient(object):
 
     def __init__(self,
                  credentials: Union[Credentials, str],
-                 use_sandbox: bool = False, use_alternative_port: bool = False, proto: Optional[str] = None,
+                 use_sandbox: bool = False, use_alternative_port: bool = False,
+                 proto: Optional[str] = None,
                  json_encoder: Optional[type] = None, password: Optional[str] = None,
                  proxy_host: Optional[str] = None, proxy_port: Optional[int] = None,
                  heartbeat_period: Optional[float] = None) -> None:
@@ -87,9 +87,13 @@ class APNsClient(object):
 
     def send_notification(self, token_hex: str, notification: Payload, topic: Optional[str] = None,
                           priority: NotificationPriority = NotificationPriority.Immediate,
-                          expiration: Optional[int] = None, collapse_id: Optional[str] = None) -> None:
-        with httpx.Client(http2=True, verify=False) as client:
-            status, reason = self.send_notification_sync(client, token_hex, notification, topic, priority, expiration,
+                          expiration: Optional[int] = None,
+                          collapse_id: Optional[str] = None) -> None:
+        with httpx.Client(http2=True,
+                          verify=self.__credentials.get_ssl_context(),
+                          ) as client:
+            status, reason = self.send_notification_sync(client, token_hex, notification, topic,
+                                                         priority, expiration,
                                                          collapse_id)
             result = self.get_notification_result(status, reason)
             if result != 'Success':
@@ -106,7 +110,8 @@ class APNsClient(object):
                                priority: NotificationPriority = NotificationPriority.Immediate,
                                expiration: Optional[int] = None, collapse_id: Optional[str] = None,
                                push_type: Optional[NotificationType] = None) -> tuple[Any, Any]:
-        json_str = json.dumps(notification.dict(), cls=self.__json_encoder, ensure_ascii=False, separators=(',', ':'))
+        json_str = json.dumps(notification.dict(), cls=self.__json_encoder, ensure_ascii=False,
+                              separators=(',', ':'))
         json_payload = json_str.encode('utf-8')
 
         headers = {}
@@ -152,10 +157,12 @@ class APNsClient(object):
         response = client.post(url, headers=headers, data=json_payload)
         return response.status_code, response.text
 
-    def send_notification_batch(self, notifications: Iterable[Notification], topic: Optional[str] = None,
+    def send_notification_batch(self, notifications: Iterable[Notification],
+                                topic: Optional[str] = None,
                                 priority: NotificationPriority = NotificationPriority.Immediate,
                                 expiration: Optional[int] = None, collapse_id: Optional[str] = None,
-                                push_type: Optional[NotificationType] = None) -> Dict[str, Union[str, Tuple[str, str]]]:
+                                push_type: Optional[NotificationType] = None) -> Dict[
+        str, Union[str, Tuple[str, str]]]:
         """
         Send a notification to a list of tokens in batch.
 
@@ -166,11 +173,19 @@ class APNsClient(object):
         results = {}
 
         # Loop over notifications
-        with self._connection as client:
+        with httpx.Client(http2=True,
+                          verify=False,
+                          cert=(
+                                  self.__credentials.get_cert_file,
+                                  self.__credentials.get_password
+                          )
+                          ) as client:
             for next_notification in notifications:
                 logger.info('Sending to token %s', next_notification.token)
-                status, reason = self.send_notification_sync(next_notification.token, next_notification.payload,
-                                                             topic, priority, expiration, collapse_id, push_type)
+                status, reason = self.send_notification_sync(client, next_notification.token,
+                                                             next_notification.payload,
+                                                             topic, priority, expiration,
+                                                             collapse_id, push_type)
                 result = self.get_notification_result(status, reason)
                 logger.info('Got response for %s: %s', next_notification.token, result)
                 results[next_notification.token] = result
