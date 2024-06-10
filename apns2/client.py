@@ -7,7 +7,7 @@ from typing import Dict, Iterable, Optional, Tuple, Union, Any
 import httpx
 from httpx import Client
 
-from .credentials import CertificateCredentials, Credentials
+from .credentials import CertificateCredentials, Credentials, TokenCredentials
 from .errors import exception_class_for_reason
 # We don't generally need to know about the Credentials subclasses except to
 # keep the old API, where APNsClient took a cert_file
@@ -63,8 +63,8 @@ class APNsClient(object):
                  credentials: Union[Credentials, str],
                  credential_type: Optional[str] = 'TOKEN',
                  use_sandbox: bool = False, use_alternative_port: bool = False,
-                 proto: Optional[str] = None,
-                 json_encoder: Optional[type] = None, password: Optional[str] = None,
+                 proto: Optional[str] = None, json_encoder: Optional[type] = None,
+                 password: Optional[str] = None, team_id: Optional[str] = None,
                  proxy_host: Optional[str] = None, proxy_port: Optional[int] = None,
                  heartbeat_period: Optional[float] = None) -> None:
         if credential_type == 'CERTIFICATE':
