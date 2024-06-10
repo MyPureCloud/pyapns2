@@ -37,7 +37,7 @@ class CertificateCredentials(Credentials):
         self.ssl_context.load_cert_chain(cert_file, password=password)
         self.cert_file = cert_file
         self.password = password
-        super(CertificateCredentials, self).__init__(ssl_context)
+        super(CertificateCredentials, self).__init__(self.ssl_context)
 
     def get_cert_file(self):
         return self.cert_file
@@ -48,10 +48,10 @@ class CertificateCredentials(Credentials):
 
 # Credentials subclass for JWT token based authentication
 class TokenCredentials(Credentials):
-    def __init__(self, auth_key_path: str, auth_key_id: str, team_id: str,
+    def __init__(self, auth_key: str, auth_key_id: str, team_id: str,
                  encryption_algorithm: str = DEFAULT_TOKEN_ENCRYPTION_ALGORITHM,
                  token_lifetime: int = DEFAULT_TOKEN_LIFETIME) -> None:
-        self.__auth_key = self._get_signing_key(auth_key_path)
+        self.__auth_key = auth_key
         self.__auth_key_id = auth_key_id
         self.__team_id = team_id
         self.__encryption_algorithm = encryption_algorithm
