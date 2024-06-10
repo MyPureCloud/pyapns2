@@ -51,7 +51,8 @@ class TokenCredentials(Credentials):
     def __init__(self, auth_key: str, auth_key_id: str, team_id: str,
                  encryption_algorithm: str = DEFAULT_TOKEN_ENCRYPTION_ALGORITHM,
                  token_lifetime: int = DEFAULT_TOKEN_LIFETIME) -> None:
-        self.__auth_key = auth_key
+        self.key = auth_key
+        self.__auth_key = self.key
         self.__auth_key_id = auth_key_id
         self.__team_id = team_id
         self.__encryption_algorithm = encryption_algorithm
