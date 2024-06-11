@@ -31,11 +31,13 @@ class Credentials(object):
 # Credentials subclass for certificate authentication
 class CertificateCredentials(Credentials):
     def __init__(self,
-                 cert_file: Optional[Union[str, bytes, PathLike[str], PathLike[bytes]]] = None,
+                 cert_file_path: Optional[Union[str, bytes, PathLike[str], PathLike[bytes]]] = None,
                  password: Optional[str] = None) -> None:
         self.ssl_context = ssl.create_default_context()
-        self.ssl_context.load_cert_chain(cert_file, password=password)
-        self.cert_file = cert_file
+        # httpx only supports adding ssl certs to the chain as a path,
+        # which precludes the use of a secrets manager without doing some temp file trickery
+        self.ssl_context.load_cert_chain(certfile=cert_file_path, password=password)
+        self.cert_file = cert_file_path
         self.password = password
         super(CertificateCredentials, self).__init__(self.ssl_context)
 

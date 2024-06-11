@@ -174,13 +174,7 @@ class APNsClient(object):
         results = {}
 
         # Loop over notifications
-        with httpx.Client(http2=True,
-                          verify=False,
-                          cert=(
-                                  self.__credentials.get_cert_file,
-                                  self.__credentials.get_password
-                          )
-                          ) as client:
+        with httpx.Client(http2=True, verify=self.__credentials.get_ssl_context()) as client:
             for next_notification in notifications:
                 logger.info('Sending to token %s', next_notification.token)
                 status, reason = self.send_notification_sync(client, next_notification.token,
