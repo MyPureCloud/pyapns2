@@ -64,13 +64,13 @@ class APNsClient(object):
                  credential_type: Optional[str] = 'TOKEN',
                  use_sandbox: bool = False, use_alternative_port: bool = False,
                  proto: Optional[str] = None, json_encoder: Optional[type] = None,
-                 password: Optional[str] = None, team_id: Optional[str] = None,
-                 proxy_host: Optional[str] = None, proxy_port: Optional[int] = None,
+                 password: Optional[str] = None, proxy_host: Optional[str] = None,
+                 proxy_port: Optional[int] = None,
                  heartbeat_period: Optional[float] = None) -> None:
         if credential_type == 'CERTIFICATE':
             self.__credentials = CertificateCredentials(credentials, password)  # type: Certificate
         else:
-            self.__credentials = TokenCredentials(credentials, password, team_id)  # type: Token
+            self.__credentials = TokenCredentials(credentials)  # type: Token
         self._init_connection(use_sandbox, use_alternative_port, proto, proxy_host, proxy_port)
 
         if heartbeat_period:

@@ -1,3 +1,4 @@
+import json
 import ssl
 import time
 from os import PathLike
@@ -55,8 +56,6 @@ class TokenCredentials(Credentials):
                  token_lifetime: int = DEFAULT_TOKEN_LIFETIME) -> None:
         self.key = auth_key
         self.__auth_key = self.key
-        self.__auth_key_id = auth_key_id
-        self.__team_id = team_id
         self.__encryption_algorithm = encryption_algorithm
         self.__token_lifetime = token_lifetime
 
@@ -85,16 +84,18 @@ class TokenCredentials(Credentials):
         token_pair = self.__jwt_token
         if token_pair is None or self._is_expired_token(token_pair[0]):
             # Create a new token
+            auth_obj = json.loads(self.__auth_key)
             issued_at = time.time()
             token_dict = {
-                'iss': self.__team_id,
+                'iss': auth_obj["issuer"],
                 'iat': issued_at,
             }
             headers = {
-                'alg': self.__encryption_algorithm,
-                'kid': self.__auth_key_id,
+                'alg': 'ES256',
+                'kid': auth_obj["key_id"],
             }
-            jwt_token = jwt.encode(token_dict, self.__auth_key,
+
+            jwt_token = jwt.encode(token_dict, auth_obj["key"],
                                    algorithm=self.__encryption_algorithm,
                                    headers=headers)
 
