@@ -51,7 +51,7 @@ class CertificateCredentials(Credentials):
 
 # Credentials subclass for JWT token based authentication
 class TokenCredentials(Credentials):
-    def __init__(self, auth_key: str, auth_key_id: str, team_id: str,
+    def __init__(self, auth_key: str,
                  encryption_algorithm: str = DEFAULT_TOKEN_ENCRYPTION_ALGORITHM,
                  token_lifetime: int = DEFAULT_TOKEN_LIFETIME) -> None:
         self.key = auth_key
