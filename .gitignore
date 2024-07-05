@@ -47,3 +47,5 @@ venv/
 
 # Poetry
 poetry.lock
+
+.idea/
